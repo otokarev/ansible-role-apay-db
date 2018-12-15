@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{db_app_name}}"
+  labels:
+    app: "{{db_app_name}}"
+spec:
+  selector:
+    matchLabels:
+      app: "{{db_app_name}}"
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: "{{db_app_name}}"
+        role: "{{db_app_role}}"
+    spec:
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: "{{zone}}"
+      containers:
+        - name: postgres
+          image: "{{db_image}}"
+{% if db_conf_configmap is defined %}
+          args:
+          - postgres
+          - -c
+          - 'config_file=/etc/postgresql/postgresql.conf'
+{% endif %}
+{% if db_resources is defined %}
+          resources:
+{% if db_resources.requests is defined %}
+            requests:
+{% if db_resources.requests.memory is defined %}
+              memory: "{{db_resources.requests.memory}}"
+{% endif %}
+{% if db_resources.requests.cpu is defined %}
+              cpu: "{{db_resources.requests.cpu}}"
+{% endif %}
+{% endif %}
+{% if db_resources.limits is defined %}
+            limits:
+{% if db_resources.limits.memory is defined %}
+              memory: "{{db_resources.limits.memory}}}"
+{% endif %}
+{% if db_resources.limits.cpu is defined %}
+              cpu: "{{db_resources.limits.cpu}}"
+{% endif %}
+{% endif %}
+{% endif %}
+          ports:
+          - name: core-pg
+            containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "{{db_username}}"
+            - name: POSTGRES_PASSWORD
+              value: "{{db_password}}"
+            - name: PGPORT
+              value: "5432"
+          volumeMounts:
+          - name: db-volume
+            subPath: pgdata
+            mountPath: /var/lib/postgresql/data
+{% if db_conf_configmap is defined %}
+          - name: cfg-volume
+            mountPath: /etc/postgresql/
+{% endif %}
+      volumes:
+        - name: db-volume
+          gcePersistentDisk:
+            pdName: "{{db_volume}}"
+            fsType: ext4
+{% if db_conf_configmap is defined %}
+        - name: cfg-volume
+          configMap:
+            name: "{{db_conf_configmap.name}}"
+            items:
+            - key: "{{db_conf_configmap.key}}"
+              path: "postgresql.conf"
+{% endif %}

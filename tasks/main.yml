@@ -1,0 +1,7 @@
+- name: Deploy stellar controller
+  include_role:
+    name: k8s/utils/kubectl-create-or-replace
+  vars:
+    controller_kind: deploy
+    controller_name: "{{db_app_name}}"
+    controller_template: db.yaml.j2
