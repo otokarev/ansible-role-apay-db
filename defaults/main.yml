@@ -1,4 +1,6 @@
-db_image: postgres:10
+db_postgresql_image: postgres:10
+db_type: postgresql
+db_mysql_image: mysql:5.7
 db_resources:
   requests:
     cpu: "100m"

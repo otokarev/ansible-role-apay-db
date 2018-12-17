@@ -22,14 +22,8 @@ spec:
       nodeSelector:
         failure-domain.beta.kubernetes.io/zone: "{{zone}}"
       containers:
-        - name: postgres
-          image: "{{db_postgresql_image}}"
-{% if db_conf_configmap is defined %}
-          args:
-          - postgres
-          - -c
-          - 'config_file=/etc/postgresql/postgresql.conf'
-{% endif %}
+        - name: mysql
+          image: "{{db_mysql_image}}"
 {% if db_resources is defined %}
           resources:
 {% if db_resources.requests is defined %}
@@ -52,33 +46,28 @@ spec:
 {% endif %}
 {% endif %}
           ports:
-          - name: core-pg
-            containerPort: 5432
+          - name: mysql
+            containerPort: 3306
           env:
-            - name: POSTGRES_USER
+            - name: MYSQL_DATABASE
+              value: "{{db_database}}"
+            - name: MYSQL_USER
               value: "{{db_username}}"
-            - name: POSTGRES_PASSWORD
+            - name: MYSQL_PASSWORD
               value: "{{db_password}}"
-            - name: PGPORT
-              value: "5432"
+{% if db_root_password is defined %}
+            - name: MYSQL_ROOT_PASSWORD
+              value: "{{db_root_password}}"
+{% else %}
+            - name: MYSQL_RANDOM_ROOT_PASSWORD
+              value: "yes"
+{% endif %}
           volumeMounts:
           - name: db-volume
-            subPath: pgdata
-            mountPath: /var/lib/postgresql/data
-{% if db_conf_configmap is defined %}
-          - name: cfg-volume
-            mountPath: /etc/postgresql/
-{% endif %}
+            subPath: mysql
+            mountPath: /var/lib/mysql
       volumes:
         - name: db-volume
           gcePersistentDisk:
             pdName: "{{db_volume}}"
             fsType: ext4
-{% if db_conf_configmap is defined %}
-        - name: cfg-volume
-          configMap:
-            name: "{{db_conf_configmap.name}}"
-            items:
-            - key: "{{db_conf_configmap.key}}"
-              path: "postgresql.conf"
-{% endif %}

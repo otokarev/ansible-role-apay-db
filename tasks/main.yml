@@ -4,4 +4,4 @@
   vars:
     controller_kind: deploy
     controller_name: "{{db_app_name}}"
-    controller_template: db.yaml.j2
+    controller_template: "{% if db_type == 'postgresql' %}db.yaml.j2{% else %}mysql.yaml.j2{% endif %}"
