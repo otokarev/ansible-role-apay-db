@@ -5,3 +5,14 @@
     controller_kind: deploy
     controller_name: "{{db_app_name}}"
     controller_template: "{% if db_type == 'postgresql' %}db.yaml.j2{% else %}mysql.yaml.j2{% endif %}"
+- name: Deploy DB services
+  include_role:
+    name: k8s/simsvc
+  vars:
+    simsvc_name: "{{db_app_name}}"
+    simsvc_selector_role: "{{db_app_role}}"
+    simsvc_ports:
+      - protocol: TCP
+        port: "{% if db_type == 'postgresql' %}5432{% else %}3306{% endif %}"
+        name: "{% if db_type == 'postgresql' %}postgres{% else %}mysql{% endif %}"
+        targetPort: "{% if db_type == 'postgresql' %}postgres{% else %}mysql{% endif %}"
