@@ -49,8 +49,10 @@ spec:
           - name: mysql
             containerPort: 3306
           env:
+{% if db_database is defined %}
             - name: MYSQL_DATABASE
               value: "{{db_database}}"
+{% endif %}
             - name: MYSQL_USER
               value: "{{db_username}}"
             - name: MYSQL_PASSWORD
@@ -66,8 +68,17 @@ spec:
           - name: db-volume
             subPath: mysql
             mountPath: /var/lib/mysql
+{% if db_initdb_configmap is defined %}
+          - name: initdb-volume
+            mountPath: /docker-entrypoint-initdb.d
+{% endif %}
       volumes:
         - name: db-volume
           gcePersistentDisk:
             pdName: "{{db_volume}}"
             fsType: ext4
+{% if db_initdb_configmap is defined %}
+        - name: initdb-volume
+          configMap:
+            name: "{{db_initdb_configmap}}"
+{% endif %}
